@@ -48,6 +48,43 @@ enum MetaCommandResult
     META_COMMAND_UNRECOGNIZED_COMMAND
 };
 
+enum StatementType
+{
+    STATEMENT_INSERT,
+    STATEMENT_SELECT
+};
+
+class Statement
+{
+    public:
+        StatementType type;
+};
+
+PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
+{
+  if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
+    statement->type = STATEMENT_INSERT;
+    return PREPARE_SUCCESS;
+  }
+  if (strcmp(input_buffer->buffer, "select") == 0) {
+    statement->type = STATEMENT_SELECT;
+    return PREPARE_SUCCESS;
+  }
+
+  return PREPARE_UNRECOGNIZED_STATEMENT;
+}
+
+void execute_statement(Statement* statement) {
+  switch (statement->type) {
+    case (STATEMENT_INSERT):
+      printf("This is where we would do an insert.\n");
+      break;
+    case (STATEMENT_SELECT):
+      printf("This is where we would do a select.\n");
+      break;
+  }
+}
+
 MetaCommandResult do_meta_command(InputBuffer& input_buffer)
 {
   if (strcmp(input_buffer.buffer, "_exit") == 0)
@@ -78,7 +115,20 @@ int main(int argc, char* argv[])
                    continue;
             }
         }
-    }
+
+        Statement statement;
+        switch (prepare_statement(input_buffer, &statement))
+        {
+            case (PREPARE_SUCCESS):
+                break;
+            case (PREPARE_UNRECOGNIZED_STATEMENT):
+                printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
+                continue;
+        }
+
+        execute_statement(&statement);
+        printf("Executed.\n");
+        }
 
     return 0;
 }
